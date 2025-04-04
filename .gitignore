@@ -4,6 +4,7 @@ minio/
 .ipynb
 
 
-__pycaches/
+__pycache__/
+*.pyc
 .DS_Store
 
