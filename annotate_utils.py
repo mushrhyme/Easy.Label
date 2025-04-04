@@ -108,7 +108,8 @@ def detection(
             # OCR 요청이 있는지 확인
             request_ocr = component_value.get("request_ocr", False)
             selected_box_id = component_value.get("selected_box_id")
-
+            # selected_box_id = bbox_data["box_id"]
+            print(f"DEBUG: selected_box_id={selected_box_id}")
             # 레이지 로드: OCR이 필요할 때만 초기화
             if request_ocr and st.session_state.ocr is None:
                 st.session_state.ocr = PaddleOCR(use_angle_cls=True, 
@@ -128,8 +129,9 @@ def detection(
                 try:
                     print(f"DEBUG: OCR 요청: {selected_box_id}")
                     # 선택된 박스 ID 파싱 (format: 'bbox-123')
-                    selected_idx = component_value.get("selected_box_index")
-                    # int(selected_box_id.split('-')[-1])
+                    # selected_idx = component_value.get("selected_box_index")
+                    selected_idx = int(selected_box_id.split('-')[-1])
+                    # 
                     print(f"DEBUG: 선택된 박스 인덱스: {selected_idx}")
                     print(f"DEBUG: bbox_data={bbox_data}")
                     if selected_idx < len(bbox_data):

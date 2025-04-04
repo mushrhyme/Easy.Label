@@ -1,0 +1,9 @@
+inference/
+annotations/
+minio/
+.ipynb
+
+
+__pycaches/
+.DS_Store
+

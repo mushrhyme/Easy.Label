@@ -1,0 +1,6 @@
+psycopg2==2.9.10
+minio==7.2.15
+streamlit==1.43.2
+sentence-transformers==4.0.1
+paddleocr==2.6.1.0
+paddlepaddle==2.5.1
