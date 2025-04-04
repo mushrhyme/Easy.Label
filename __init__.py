@@ -279,7 +279,7 @@ def render_main_content():
         st.warning("선택한 버킷에 이미지 파일이 없습니다.")
         st.info("사이드바에서 이미지를 업로드해주세요.")
         return
-        
+    
     # 현재 이미지 선택 및 업데이트
     print("DEBUG: current_page", st.session_state.current_page)
     st.session_state.current_image = image_objects[st.session_state.current_page]

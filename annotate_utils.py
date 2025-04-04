@@ -41,179 +41,131 @@ def detection(
         key=None,
     ):
     """객체 탐지 및 어노테이션 컴포넌트를 표시합니다."""
-    # MinIO에서 이미지 로드
     temp_image_path = client.load_image(bucket_name, object_name)
     if not temp_image_path:
         st.error(f"이미지를 로드할 수 없습니다: {object_name}")
         return None
-    
+
     image = Image.open(temp_image_path)
     original_image_size = image.size
-    
-    # 이미지를 numpy 배열로 변환 (OCR 처리용)
     image_np = np.array(image)
-    
-    # 화면 크기에 맞게 이미지 크기 조정
+
     if height is None or width is None:
-        # 기본값을 화면에 맞게 설정 (Streamlit은 기본적으로 컨테이너 최대 너비가 있음)
-        width = 1200  # 화면 너비에 맞게 조정
+        width = 1200
         height = int(original_image_size[1] * (width / original_image_size[0]))
-    
+
     image.thumbnail(size=(width, height))
     resized_image_size = image.size
     scale = original_image_size[0]/resized_image_size[0]
-    
-    image_url = image_to_url(image, image.size[0], True, "RGB", "PNG", f"detection-{md5(image.tobytes()).hexdigest()}-{key}")
+
+    image_url = image_to_url(
+        image, image.size[0], True, "RGB", "PNG",
+        f"detection-{md5(image.tobytes()).hexdigest()}-{key}"
+    )
     if image_url.startswith('/'):
         image_url = image_url[1:]
 
     color_map = get_colormap(labels, colormap_name='gist_rainbow')
-    
-    # 안전하게 bbox_info 생성
-    # print(f"DEBUG: bboxes={bboxes}, labels={labels}")
+
+    # bbox_info 생성
     bbox_info = []
-    label_ids = 0
-    for item in zip(bboxes, labels):
-        bbox = [b/scale for b in item[0]]  # 바운딩 박스 스케일 조정
-        if len(item) > 1:
-            label = item[1]  # 라벨 이름
-            label_id = label_ids
-            bbox_info.append({
-                'bbox': bbox,
-                'label_id': label_id,
-                'label': label
-            })
-            label_ids += 1
-    # print(f"DEBUG: bbox_info={bbox_info}")   
+    for i, (bbox, label) in enumerate(zip(bboxes, labels)):
+        scaled_bbox = [b/scale for b in bbox]
+        bbox_info.append({
+            'bbox': scaled_bbox,
+            'label_id': i,
+            'label': label
+        })
+    
+    # 컴포넌트 호출을 위한 args 구성
     component_args = {
-        "image_url": image_url, 
-        "image_size": image.size, 
-        "bbox_info": bbox_info, 
-        "color_map": color_map, 
-        "line_width": line_width, 
-        "use_space": use_space
+        "image_url": image_url,
+        "image_size": image.size,
+        "bbox_info": bbox_info,
+        "color_map": color_map,
+        "line_width": line_width,
+        "use_space": use_space,
+        "ocr_suggestions": st.session_state.get("ocr_result", []),  # OCR 결과 전달
+        "request_ocr": False
     }
 
-    # 컴포넌트 호출 결과 받기
+    # 컴포넌트 호출
     component_value = _component_func(**component_args, key=key)
+
     print(f"DEBUG: component_value={component_value}")
-    # 새로운 응답 형식 처리 (mode + bboxes)
-    if component_value is not None:
-        # 새 형식으로 데이터가 들어왔는지 확인
-        if isinstance(component_value, dict) and "bboxes" in component_value:
-            current_mode = component_value.get("mode", "Draw")
-            bbox_data = component_value["bboxes"]
-            save_requested = component_value.get("save_requested", False)
-            
-            # OCR 요청이 있는지 확인
-            request_ocr = component_value.get("request_ocr", False)
-            selected_box_id = component_value.get("selected_box_id")
-            # selected_box_id = bbox_data["box_id"]
-            print(f"DEBUG: selected_box_id={selected_box_id}")
-            # 레이지 로드: OCR이 필요할 때만 초기화
-            if request_ocr and st.session_state.ocr is None:
-                st.session_state.ocr = PaddleOCR(use_angle_cls=True, 
-                    show_log=False, 
+
+    # 반환값 없으면 아직 렌더 중
+    if component_value is None:
+        return None
+
+    if isinstance(component_value, dict) and "bboxes" in component_value:
+        request_ocr = component_value.get("request_ocr", False)
+        selected_box_id = component_value.get("selected_box_id")
+        bbox_data = component_value.get("bboxes", [])
+        print(f"DEBUG: request_ocr={request_ocr}, selected_box_id={selected_box_id}, bbox_data={bbox_data}")
+
+        if request_ocr and selected_box_id:
+            if st.session_state.get("pending_ocr_request", False):
+                print("DEBUG: OCR 요청이 이미 처리 중입니다.")
+                return None
+
+            st.session_state.pending_ocr_request = True
+
+            # OCR 객체가 없으면 초기화
+            if st.session_state.get("ocr") is None:
+                st.session_state.ocr = PaddleOCR(
+                    use_angle_cls=True,
+                    show_log=False,
                     lang='korean',
                     det_model_dir='/Users/nongshim/Desktop/Python/project/streamlit_image_annotation/Detection/inference/det_v6',
                     rec_model_dir='/Users/nongshim/Desktop/Python/project/streamlit_image_annotation/Detection/inference/rec_v2_19_best'
                 )
 
-            # OCR 결과를 담을 변수
-            ocr_suggestions = []
-            
-            # OCR 요청이 있고, 선택된 박스 ID가 있으면 OCR 처리
-            if request_ocr and not st.session_state.pending_ocr_request:
-                # 중복 처리 방지
-                st.session_state.pending_ocr_request = True
-                try:
-                    print(f"DEBUG: OCR 요청: {selected_box_id}")
-                    # 선택된 박스 ID 파싱 (format: 'bbox-123')
-                    # selected_idx = component_value.get("selected_box_index")
-                    selected_idx = int(selected_box_id.split('-')[-1])
-                    # 
-                    print(f"DEBUG: 선택된 박스 인덱스: {selected_idx}")
-                    print(f"DEBUG: bbox_data={bbox_data}")
-                    if selected_idx < len(bbox_data):
-                        selected_bbox = bbox_data[selected_idx]['bbox']
+            try:
+                print(f"DEBUG: OCR 요청됨: {selected_box_id}")
+                selected_idx = int(selected_box_id.split('-')[-1])
+                if selected_idx < len(bbox_data):
+                    selected_bbox = bbox_data[selected_idx]['bbox']
+                    ocr_result = process_ocr_for_bbox_array(image_np, selected_bbox, st.session_state.ocr)
 
-                        # OCR 처리 수행
-                        ocr_suggestions = process_ocr_for_bbox_array(image_np, selected_bbox, st.session_state.ocr)
-                        print(f"DEBUG: OCR 결과: {ocr_suggestions}")
-                        
-                        # OCR 결과가 비어있으면 기본값 제공
-                        if not ocr_suggestions:
-                            ocr_suggestions = ["텍스트 없음"]
-                except Exception as e:
-                    print(f"OCR 처리 중 오류 발생: {e}")
-                    traceback.print_exc()
+                    if not ocr_result:
+                        ocr_result = ["텍스트 없음"]
 
-                finally:
-                    # 요청 처리 완료
-                    st.session_state.pending_ocr_request = False
-                
-                if ocr_suggestions:
-                    print("전달되었나용?")
-                    print(f"DEBUG: ocr_suggestions={ocr_suggestions}")
-                    component_value["ocr_suggestions"] = ocr_suggestions
-                    print(f"DEBUG: 컴포넌트에 전달되는 OCR 데이터: {component_value['ocr_suggestions']}")
-                     
-                # 임시 파일 삭제 (OCR 처리 후에 삭제)
-                try:
-                    os.unlink(temp_image_path)
-                except Exception as e:
-                    print(f"임시 파일 삭제 중 오류: {e}")
-                    
-                # OCR 결과와 함께 기존 상태 유지하며 반환
-                return component_value
-        
-        # 기존 형식 지원 (하위 호환성)
-        else:
-            current_mode = "Draw"
-            bbox_data = component_value
-            save_requested = False
-            ocr_suggestions = []
+                    print(f"DEBUG: OCR 결과: {ocr_result}")
+                    st.session_state.ocr_result = ocr_result  # ✅ 세션 상태에 저장
+                    component_value["request_ocr"] = False
+                    print(f"request_ocr={component_value['request_ocr']}")
+                    st.session_state.request_ocr = False  # ✅ 세션 상태에 저장
+                    st.session_state.pending_ocr_request = False  # ✅ 세션 상태에 저장
+                else:
+                    print(f"WARNING: 선택된 박스 인덱스가 범위 초과: {selected_idx}")
+            except Exception as e:
+                print(f"ERROR: OCR 처리 중 오류: {e}")
+                traceback.print_exc()
+            finally:
+                st.session_state.pending_ocr_request = False
 
-        # 기존 형식을 새 형식으로 변환
-        processed_bboxes = []
-        for item in bbox_data:
-            label_value = item.get('label', '')
-            label_id = labels.index(label_value) if label_value in labels else 0
-            
-            processed_bboxes.append({
-                'bbox': [b*scale for b in item['bbox']], 
-                'label_id': label_id, 
-                'label': label_value
-            })
-        
-        # 임시 파일 삭제
-        try:
-            os.unlink(temp_image_path)
-        except Exception as e:
-            print(f"임시 파일 삭제 중 오류: {e}")
-
-        # 결과 반환
-        result = {
-            "mode": current_mode,
-            "bboxes": processed_bboxes,
-            "save_requested": save_requested
-        }
-        
-        # OCR 결과가 있으면 포함 
-        if "ocr_suggestions" in component_value and component_value["ocr_suggestions"]:
-            result["ocr_suggestions"] = component_value["ocr_suggestions"]
-            
-        return result
+            # # rerun 유도 → 다음 렌더에서 OCR 결과가 반영됨
+            # print("🔁 rerun 호출 직전")
+            # st.rerun()
+        return component_value
     
-    # 임시 파일 삭제
-    try:
-        os.unlink(temp_image_path)
-    except Exception as e:
-        print(f"임시 파일 삭제 중 오류: {e}")
-    
-    return None
+    ocr_result = st.session_state.get("ocr_result", [])
 
-def detect_text_regions(image_path, ocr):
+    if "ocr_result" in st.session_state:
+        del st.session_state.ocr_result
+    if "request_ocr" in st.session_state:
+        del st.session_state["request_ocr"]
+    
+    return {
+        "mode": component_value.get("mode", "Draw"),
+        "bboxes": component_value.get("bboxes", []),
+        "save_requested": component_value.get("save_requested", False),
+        "ocr_suggestions": ocr_result,
+    }
+
+
+def detect_tt_regions(image_path, ocr):
     """
     이미지에서 텍스트 영역(BBox)만 검출하는 함수
     """
