@@ -122,13 +122,6 @@ const Detection = ({ args }: ComponentProps) => {
     }
   };
 
-  // // OCR 요청을 위한 함수
-  // useEffect(() => {
-  //   if (args.ocr_suggestions && args.ocr_suggestions.length > 0) {
-  //     handleOcrResponse(args.ocr_suggestions);
-  //   }
-  // }, [args.ocr_suggestions]);
-
   const previousOcrRef = useRef<string[] | null>(null); // ✅ 이전 OCR 결과 캐시
   console.log(args.request_ocr, args.ocr_suggestions, previousOcrRef.current);
   useEffect(() => {

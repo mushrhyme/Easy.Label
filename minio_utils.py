@@ -6,9 +6,29 @@ from minio.error import S3Error
 import streamlit as st
 import datetime
 import json
+from PIL import Image
 
 # @st.cache_resource
 # minioadmin
+
+
+def get_image_dimensions(image_filename):
+    """이미지 파일의 크기를 반환합니다."""
+    try:
+        # 기존 코드 패턴에 맞춰 수정
+        temp_image_path = st.session_state.minio_client.load_image(
+            st.session_state.selected_bucket, 
+            image_filename
+        )
+        print(f"DEBUG: temp_image_path={temp_image_path}")
+        if not temp_image_path:
+            st.error(f"이미지를 로드할 수 없습니다: {image_filename}")
+        
+        img = Image.open(temp_image_path)
+        return img.width, img.height
+    except Exception as e:
+        print(f"이미지 크기를 확인하는 중 오류 발생: {e}")
+
 class MinIOManager:
     """
     MinIO 서버와의 상호작용을 관리하는 클래스
@@ -42,37 +62,7 @@ class MinIOManager:
             return True, buckets
         except Exception as e:
             return False, str(e)
-    
-    def list_buckets(self):
-        """
-        MinIO의 모든 버킷 목록을 반환합니다.
-        
-        Returns:
-            list: 버킷 이름 목록
-        """
-        try:
-            buckets = self.client.list_buckets()
-            return [bucket.name for bucket in buckets]
-        except Exception as e:
-            st.error(f"버킷 목록 조회 실패: {e}")
-            return []
-    
-    def create_bucket(self, bucket_name):
-        """
-        새 버킷을 생성합니다.
-        
-        Args:
-            bucket_name (str): 생성할 버킷 이름
-            
-        Returns:
-            bool: 성공 여부
-        """
-        try:
-            self.client.make_bucket(bucket_name)
-            return True
-        except Exception as e:
-            st.error(f"버킷 생성 실패: {e}")
-            return False
+
     
     def list_images_in_bucket(self, bucket_name, prefix=None):
         """
@@ -98,57 +88,47 @@ class MinIOManager:
         except Exception as e:
             st.error(f"이미지 목록 조회 실패: {e}")
             return []
-        
-    def move_image_between_folders(self, bucket_name, object_name, target_folder):
+
+    def list_project_folders(self, bucket_name):
         """
-        이미지를 한 폴더에서 다른 폴더로 이동시킵니다.
+        easylabel 버킷 안에서 최상위 프로젝트 폴더 목록을 가져옵니다.
+        (즉, easylabel/project_id/* 구조의 project_id 들만 추출)
+        """
+        try:
+            objects = self.client.list_objects(bucket_name, recursive=False)
+            folders = set()
+            for obj in objects:
+                parts = obj.object_name.split("/")
+                if len(parts) >= 2:
+                    folders.add(parts[0])  # 'project_id' 추출
+            return sorted(list(folders))
+        except Exception as e:
+            st.error(f"MinIO 프로젝트 폴더 조회 실패: {e}")
+            return []
+
+    def list_all_files(self, bucket_name):
+        """
+        버킷 내의 모든 파일 경로 목록을 반환합니다.
         
         Args:
-            bucket_name (str): 버킷 이름
-            object_name (str): 이동할 객체 이름 (전체 경로 포함)
-            target_folder (str): 대상 폴더 경로
+            bucket_name (str): 파일 목록을 가져올 버킷 이름
             
         Returns:
-            bool: 이동 성공 여부
+            list: 모든 파일 경로 목록
         """
         try:
-            # 원본 파일 데이터 가져오기
-            data = self.client.get_object(bucket_name, object_name)
+            # 재귀적으로 모든 객체를 나열
+            objects = self.client.list_objects(bucket_name, recursive=True)
             
-            # 새로운 경로 생성 (파일 이름만 추출하여 대상 폴더에 추가)
-            file_name = os.path.basename(object_name)
-            new_object_name = f"{target_folder}/{file_name}"
-            
-            # 파일 크기 확인 (put_object에 정확한 크기 전달)
-            file_size = data.info().get('Content-Length')
-            if not file_size:
-                file_size = -1  # 크기를 모를 경우 -1 사용
-            
-            # 대상 폴더에 복사
-            self.client.put_object(
-                bucket_name,
-                new_object_name,
-                data,
-                length=int(file_size),
-                content_type="image/jpeg"  # 이미지 타입에 맞게 설정
-            )
-            
-            # 원본 파일 삭제
-            self.client.remove_object(bucket_name, object_name)
-            
-            return True
+            # 모든 파일 경로 수집
+            all_files = []
+            for obj in objects:
+                all_files.append(obj.object_name)
+                
+            return all_files
         except Exception as e:
-            st.error(f"이미지 이동 실패: {e}")
-            return False
-    
-    def check_file_exists(self, bucket_name, file_path):
-        try:
-            # MinIO에서 파일 존재 여부 확인
-            self.client.stat_object(bucket_name, file_path)
-            return True  # 파일이 존재함
-        except Exception as e:
-            # NoSuchKey 또는 다른 예외가 발생하면 파일이 존재하지 않음
-            return False
+            print(f"Error listing files in bucket {bucket_name}: {e}")
+            return []
     
     def upload_image(self, bucket_name, folder_path, uploaded_file):
         """
@@ -163,10 +143,11 @@ class MinIOManager:
         """
         try:            
             # 업로드할 파일의 경로 설정: 폴더 경로와 파일 이름을 합쳐서 객체 키로 사용
-            object_name = os.path.join(folder_path, uploaded_file.name)  # 예: 'working/user1/image.jpg'
+            object_name = os.path.join(folder_path, uploaded_file.name) 
         
             # 파일 업로드
             file_data = uploaded_file.getvalue()
+            print(f"[DEBUG] 업로드 시도: {bucket_name}/{object_name}, 파일 크기: {len(file_data)}")
             self.client.put_object(
                 bucket_name,
                 object_name,
@@ -174,11 +155,45 @@ class MinIOManager:
                 length=len(file_data),
                 content_type=uploaded_file.type
             )
+            print(f"[DEBUG] 업로드 성공: {object_name}")
             return True
         except S3Error as err:
             st.error(f"MinIO 업로드 에러: {err}")
             return False
     
+    def upload_image(self, bucket_name, folder_path, uploaded_file):
+        try:
+            # 파일 이름과 object 이름 구성
+            file_name = uploaded_file.name
+            object_name = os.path.join(folder_path, file_name).replace("\\", "/")
+            
+            # 파일 바이트 읽기
+            file_data = uploaded_file.getvalue()
+            file_size = len(file_data)
+            
+            if file_size == 0:
+                st.error(f"⚠️ {file_name}: 파일 크기가 0입니다. 업로드 생략됨.")
+                return False
+
+            # content_type이 없을 경우 기본값 지정
+            content_type = uploaded_file.type or "image/jpeg"
+            
+            print(f"[DEBUG] 업로드 시도: {bucket_name}/{object_name}, size={file_size}, type={content_type}")
+            
+            self.client.put_object(
+                bucket_name,
+                object_name,
+                io.BytesIO(file_data),
+                length=file_size,
+                content_type=content_type
+            )
+            print(f"[DEBUG] ✅ 업로드 성공: {object_name}")
+            return True
+        except Exception as e:
+            st.error(f"MinIO 업로드 에러: {e}")
+            return False
+
+
     def load_image(self, bucket_name, object_name):
         """
         MinIO에서 이미지를 로드하여 임시 파일 경로를 반환합니다.

@@ -1,2 +1,4 @@
 [theme]
 base="light"
+[logger]
+level = "error"  # 오류 레벨만 표시 (warning과 info는 표시하지 않음)
