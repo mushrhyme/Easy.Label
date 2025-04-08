@@ -33,7 +33,7 @@ class MinIOManager:
     """
     MinIO 서버와의 상호작용을 관리하는 클래스
     """
-    def __init__(self, access_key, secret_key, endpoint="localhost:9000", secure=False):
+    def __init__(self, access_key, secret_key, endpoint="172.17.17.100:9000", secure=False):
         """
         MinIO 클라이언트를 초기화합니다.
         
