@@ -7,6 +7,11 @@ from postgresql_utils import *
 from minio_utils import *
 from style_utils import *
 
+@st.cache_data
+def load_credentials():
+    with open("credentials.json", "r") as f:
+        return json.load(f)
+
 def login():
     # 로고 및 헤더
     st.markdown("""
@@ -36,8 +41,9 @@ def login():
             
             st.success("로그인 성공!")
             st.session_state.userid = userid
-            st.session_state.access_key = user_db[st.session_state.userid]["access_key"]
-            st.session_state.secret_key = user_db[st.session_state.userid]["secret_key"]
+            credentials = load_credentials()
+            st.session_state.access_key = credentials["accessKey"]
+            st.session_state.secret_key = credentials["secretKey"]
             st.session_state.logged_in = True
             st.rerun()
 
