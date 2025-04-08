@@ -32,10 +32,9 @@ psql postgres
 #### `postgresql.conf` 수정
 
 ```bash
+# .conf 경로는 brew info postgresq로 확인
 nano /opt/homebrew/var/postgresql@16/postgresql.conf
-```
 
-```
 # 주석 해제 후 값 변경
 listen_addresses = '*'
 ```
@@ -44,10 +43,8 @@ listen_addresses = '*'
 
 ```bash
 nano /opt/homebrew/var/postgresql@16/pg_hba.conf
-```
 
-```
-# 맨 아래에 아래 추가
+# 맨 아래에 추가
 host    all             all             0.0.0.0/0               md5
 ```
 
@@ -55,6 +52,33 @@ host    all             all             0.0.0.0/0               md5
 
 ```bash
 brew services restart postgresql
+```
+
+#### 초기 테이블 생성
+```bash
+# 이미지 메타데이터 테이블 생성
+CREATE TABLE metadata (
+    id SERIAL PRIMARY KEY,
+    filename TEXT UNIQUE NOT NULL,
+    project_name TEXT NOT NULL,
+    storage_path TEXT NOT NULL,
+    status TEXT NOT NULL,
+    width INT NOT NULL,
+    height INT NOT NULL,
+    created_by TEXT NOT NULL,  
+    created_at TIMESTAMP NOT NULL,
+    assigned_by TEXT,
+    last_modified_by TEXT NOT null,
+    last_modified_at TIMESTAMP NOT NULL
+);
+
+# 이미지 어노테이션 테이블 생성
+CREATE TABLE annotations (
+    id SERIAL PRIMARY KEY,
+    info_id INT NOT NULL REFERENCES metadata(id) ON DELETE CASCADE,
+    label TEXT NOT NULL,
+    bbox JSONB NOT NULL  
+);
 ```
 
 ---
@@ -89,16 +113,11 @@ nohup minio server --console-address ":9001" ~/minio > ~/minio.log 2>&1 &
 - S3 API: [http://localhost:9000](http://localhost:9000)
 
 ### 4. 실행 확인 및 종료
-
-#### 실행 확인
-
 ```bash
+# 실행 확인
 ps aux | grep minio
-```
 
-#### 종료
-
-```bash
+# 종료
 kill [PID]
 ```
 
