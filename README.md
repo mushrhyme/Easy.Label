@@ -54,6 +54,12 @@ host    all             all             0.0.0.0/0               md5
 brew services restart postgresql
 ```
 
+### 5. DBeaver
+#### DBeaver 설치
+```bash
+brew install --cask dbeaver-community
+```
+
 #### 초기 테이블 생성
 ```bash
 # 이미지 메타데이터 테이블 생성
