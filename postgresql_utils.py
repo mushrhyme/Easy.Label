@@ -131,9 +131,7 @@ def insert_metadata(project_name, image_path):
         current_time = datetime.datetime.now().isoformat()
     
         # 이미지 크기 확인
-        print(f"이미지 크기 확인 전 확인: {image_path}")
         img_width, img_height = get_image_dimensions(image_path.replace("easylabel/", ""))
-        print(f"DEBUG: img_width={img_width}, img_height={img_height}")
         info_data = {
             'filename': os.path.basename(image_path),
             'project_name': project_name,
@@ -158,7 +156,6 @@ def insert_metadata(project_name, image_path):
             info_data['created_by'], info_data['created_at'], info_data['assigned_by'],
             info_data['last_modified_by'], info_data['last_modified_at']
         ))
-        print("DEBUG: 메타데이터 삽입 완료")
         # 커밋 후 연결 종료
         conn.commit()
         cursor.close()
@@ -305,7 +302,6 @@ def load_metadata(image_path):
         cursor = conn.cursor()
         
         # 해당 이미지의 메타데이터 정보 조회
-        print(f"DEBUG: image_id={image_id}")
         select_sql = "SELECT filename, storage_path, assigned_by, status FROM metadata WHERE id = %s"
         cursor.execute(select_sql, (image_id,))
         
@@ -323,7 +319,6 @@ def load_metadata(image_path):
                 'assigned_by': metadata[2] if not None else None,
                 'status': metadata[3]
             }
-            print(f"DEBUG: 메타데이터 로딩 완료: {st.session_state.metadata}")
             return True
         else:
             print("DEBUG: 메타데이터가 존재하지 않음")
@@ -355,7 +350,6 @@ def insert_annotations(image_path):
         for ann in st.session_state.annotations:
             label = ann['label']
             bbox = ann['bbox']
-            # print(ann)
             
             insert_sql = """
                 INSERT INTO annotations (info_id, label, bbox) 
@@ -372,7 +366,6 @@ def insert_annotations(image_path):
         cursor.close()
         conn.close()
 
-        print("DEBUG: 어노테이션 저장/업데이트 완료")
         return True
 
     except Exception as e:
@@ -444,7 +437,6 @@ def load_annotations(image_path):
         cursor = conn.cursor()
         
         # 해당 이미지의 어노테이션 정보 조회
-        print(f"DEBUG: image_id={image_id}")
         select_sql = "SELECT label, bbox FROM annotations WHERE info_id = %s"
         cursor.execute(select_sql, (image_id,))
         
@@ -531,7 +523,7 @@ def get_path_by_status(status):
         
         # 결과 가져오기
         rows = cursor.fetchall()
-        # print(f"DEBUG: '{status}' 상태 이미지 수: {count}")
+        
         # 연결 종료
         cursor.close()
         conn.close()
@@ -941,7 +933,7 @@ def display_image_grid(images, page=1, items_per_page=12):
                     with open("./DB/iam.json", "r", encoding="utf-8") as f:
                         iam = json.load(f)
             
-                    if assigned_by != "NULL":
+                    if assigned_by != "NULL" and assigned_by is not None:
                         st.text(f"할당된 사용자: {iam[assigned_by]['username']}({assigned_by})")
 
                     st.text(f"업로드한 사용자: {iam[created_by]['username']}({created_by})")

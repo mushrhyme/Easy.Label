@@ -23,7 +23,6 @@ def display_project_list(projects):
             st.markdown("---")
 
 def render_mode_indicator(review_mode):
-    print(f"mode: {st.session_state.mode}")
     if st.session_state.mode == "confirmed":
         mode_class = "confirmed-mode"
         mode_title = "확정 모드"

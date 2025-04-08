@@ -155,8 +155,6 @@ def update_current_image():
         set_current_page(0)
         
     st.session_state.current_image = st.session_state.image_list[get_current_page()]
-    print(f"DEBUG: 업데이트 후 image_objects={st.session_state.current_image}")
-
 
 def display_progress_cards():
     """
@@ -234,9 +232,7 @@ def adjust_page_after_action(updated_image_objects):
     # 현재 페이지가 유효한지 확인하고 조정
     if get_current_page() >= len(updated_image_objects):
         # 페이지 번호가 범위를 벗어나면 마지막 이미지로 조정
-        print(f"DEBUG: 페이지 조정 전: {get_current_page()}")
         set_current_page(len(updated_image_objects) - 1)
-        print(f"DEBUG: 페이지 조정됨: {get_current_page()}")
     
     # 이미지가 하나만 남았다면 페이지를 0으로 설정
     if len(updated_image_objects) == 1:

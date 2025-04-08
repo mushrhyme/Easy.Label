@@ -87,16 +87,13 @@ def render_sidebar():
 
 
 def render_main_content():
-    print(f"mode: {st.session_state.mode}")
     # image_list 업데이트
     if st.session_state.review_mode:
         st.session_state.image_list = get_path_by_status("review")
     elif st.session_state.mode == "labeling":
         st.session_state.image_list = get_path_by_status("assigned")
     elif st.session_state.mode == "confirmed":
-        print(f"0) total images: {len(st.session_state.image_list)}")
         st.session_state.image_list = get_path_by_status("confirmed")
-    print(f"1) total images: {len(st.session_state.image_list)}")
     
     # 모드 표시자 스타일 추가
     apply_mode_indicator_styles()
@@ -112,7 +109,7 @@ def render_main_content():
         
         # 어노테이션 데이터 준비
         bboxes, labels = prepare_annotation_data()
-    print(f"2) total images: {len(st.session_state.image_list)}")
+
     # 상태 전환 버튼
     if st.session_state.mode != "confirmed":
         col1, col2, col3 = st.columns(3)
@@ -143,7 +140,7 @@ def render_main_content():
                 # 자동 감지 전에 현재 시간을 포함한 고유 키 생성
                 if st.button("🔍 자동 감지", help="OCR을 활용해 박스를 자동으로 그려줍니다", type="tertiary", use_container_width=True):
                     object_name = st.session_state.current_image.replace("easylabel/","")
-                    print(f"DEBUG: object_name: {object_name}")
+                
                     auto_detect_text_regions(st.session_state.selected_bucket, object_name, bboxes, labels)
                     # 키 업데이트
                     st.session_state.render_key += 1
@@ -163,13 +160,12 @@ def render_main_content():
                         assigned_by = result[0]  # created_by 값을 assigned_by에 할당
                     update_metadata(image_id, "confirmed", assigned_by)
                     handle_next_image_after_action()
-    print(f"3) total images: {len(st.session_state.image_list)}")
+
     if len(st.session_state.image_list) > 0:
         # 이미지 정보 표시
         update_current_image()
-        print(f"4) total images: {len(st.session_state.image_list)}")
+
         # 이미지 네비게이션
-        print(f"DEBUG: 현재 이미지: {st.session_state.current_page}")
         render_image_controls()
 
         # 이미지 어노테이션 표시

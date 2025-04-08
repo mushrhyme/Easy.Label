@@ -123,8 +123,6 @@ def detection(
     # 컴포넌트 호출
     component_value = _component_func(**component_args, key=key)
 
-    print(f"DEBUG: component_value={component_value}")
-
     # 반환값 없으면 아직 렌더 중
     if component_value is None:
         return None
@@ -189,7 +187,7 @@ def auto_detect_text_regions(bucket_name, object_name, bboxes, labels):
 
                 # 새로운 바운딩 박스 좌표 생성 (x1, y1, x2, y2 형식)
                 new_bbox = [float(min_x), float(min_y), float(max_x - min_x), float(max_y - min_y)]
-                # print("DEBUG: new_bbox", new_bbox)
+
                 # 새 바운딩 박스가 기존에 없으면 추가
                 if new_bbox not in bboxes:
                     bboxes.append(new_bbox)
@@ -215,7 +213,7 @@ def auto_detect_text_regions(bucket_name, object_name, bboxes, labels):
                                 "height": new_bbox[3]
                             }
                         }
-                        # print("DEBUG: new_annotation", new_annotation)
+
                         st.session_state.annotations.append(new_annotation)
   
     except Exception as e:
@@ -319,14 +317,12 @@ def process_ocr_for_bbox_array(image_np, bbox, ocr):
         
         # 범위가 유효한지 확인
         if x1 >= x2 or y1 >= y2 or x1 >= w or y1 >= h:
-            print(f"DEBUG: 유효하지 않은 바운딩 박스 좌표: x1={x1}, y1={y1}, x2={x2}, y2={y2}, w={w}, h={h}")
             return default_text  # 유효하지 않은 영역
         
         # 이미지 크롭
         cropped_image = image_np[y1:y2, x1:x2]
         
         # 크롭된 이미지 크기 확인 (디버깅용)
-        print(f"DEBUG: 크롭된 이미지 크기: {cropped_image.shape}")
         
         # PaddleOCR에서 사용하는 형식으로 바운딩 박스 좌표 변환
         # 좌상, 우상, 우하, 좌하 순서의 4개 점 좌표
@@ -344,8 +340,6 @@ def process_ocr_for_bbox_array(image_np, bbox, ocr):
         
         # 결과 확인 및 반환
         if paddle_txts and len(paddle_txts) > 0:
-            print(f"DEBUG: 인식된 텍스트: {paddle_txts}, 점수: {paddle_scores}")
-            
             # # 신뢰도 기준으로 필터링 (옵션)
             # confidence_threshold = 0.5
             # filtered_texts = [txt for txt, score in zip(paddle_txts, paddle_scores) if score > confidence_threshold]

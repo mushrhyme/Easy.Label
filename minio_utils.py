@@ -20,7 +20,6 @@ def get_image_dimensions(image_filename):
             st.session_state.selected_bucket, 
             image_filename
         )
-        print(f"DEBUG: temp_image_path={temp_image_path}")
         if not temp_image_path:
             st.error(f"이미지를 로드할 수 없습니다: {image_filename}")
         
@@ -147,7 +146,6 @@ class MinIOManager:
         
             # 파일 업로드
             file_data = uploaded_file.getvalue()
-            print(f"[DEBUG] 업로드 시도: {bucket_name}/{object_name}, 파일 크기: {len(file_data)}")
             self.client.put_object(
                 bucket_name,
                 object_name,
@@ -155,7 +153,6 @@ class MinIOManager:
                 length=len(file_data),
                 content_type=uploaded_file.type
             )
-            print(f"[DEBUG] 업로드 성공: {object_name}")
             return True
         except S3Error as err:
             st.error(f"MinIO 업로드 에러: {err}")
@@ -177,9 +174,7 @@ class MinIOManager:
 
             # content_type이 없을 경우 기본값 지정
             content_type = uploaded_file.type or "image/jpeg"
-            
-            print(f"[DEBUG] 업로드 시도: {bucket_name}/{object_name}, size={file_size}, type={content_type}")
-            
+           
             self.client.put_object(
                 bucket_name,
                 object_name,
@@ -187,7 +182,7 @@ class MinIOManager:
                 length=file_size,
                 content_type=content_type
             )
-            print(f"[DEBUG] ✅ 업로드 성공: {object_name}")
+
             return True
         except Exception as e:
             st.error(f"MinIO 업로드 에러: {e}")
