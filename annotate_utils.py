@@ -160,7 +160,7 @@ def auto_detect_text_regions(bucket_name, object_name, bboxes, labels):
     temp_image_path = None
     try:
         # MinIO에서 임시 파일로 이미지 다운로드
-        temp_image_path = st.session_state.st.session_state.minio_client.load_image(
+        temp_image_path = st.session_state.minio_client.load_image(
             bucket_name,
             object_name
         )
@@ -168,12 +168,13 @@ def auto_detect_text_regions(bucket_name, object_name, bboxes, labels):
         if temp_image_path:
             # 텍스트 영역 감지
             if st.session_state.ocr is None:
+                
                 st.session_state.ocr = PaddleOCR(
                     use_angle_cls=True,
                     show_log=False,
                     lang='korean',
-                    det_model_dir='/Users/nongshim/Desktop/Python/project/streamlit_image_annotation/Detection/inference/det_v6',
-                    rec_model_dir='/Users/nongshim/Desktop/Python/project/streamlit_image_annotation/Detection/inference/rec_v2_19_best'
+                    det_model_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'inference/det_v6'),
+                    rec_model_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'inference/rec_v2_19_best')
                 )
 
             _, detected_boxes = detect_text_regions(temp_image_path, st.session_state.ocr)
