@@ -1,16 +1,38 @@
 {
     "2024087": {
-        "pw": "20240871111",
+        "pw": "1111",
         "username": "조유민",
-        "pocily": "admin",
-        "access_key": "i57qPyQoK6hVJDwSVWFc",
-        "secret_key": "YLVgMnrBNFof58pFags2rfJOXubjh9c2POJpu0zx"
+        "team": "DT추진팀",
+        "pocily": "admin"
     },
     "2009325": {
-        "pw": "20093251111",
+        "pw": "1111",
         "username": "박승환",
-        "pocily": "user",
-        "access_key": "i57qPyQoK6hVJDwSVWFc",
-        "secret_key": "YLVgMnrBNFof58pFags2rfJOXubjh9c2POJpu0zx"
+        "team": "DT추진팀",
+        "pocily": "user"        
+    },
+    "2002534": {
+        "pw": "1111",
+        "username": "이주영",
+        "team": "DT추진팀",
+        "pocily": "user"        
+    },
+    "2012425": {
+        "pw": "1111",
+        "username": "권명안",
+        "team": "마켓인사이트팀",
+        "pocily": "user"        
+    },
+    "2024206": {
+        "pw": "1111",
+        "username": "한유선",
+        "team": "영업기획팀",
+        "pocily": "user"        
+    },
+    "2021093": {
+        "pw": "1111",
+        "username": "서민지",
+        "team": "영업기획팀",
+        "pocily": "user"        
     }
 }
