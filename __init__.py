@@ -74,15 +74,15 @@ def initialize_session_state():
 
 
 # 사이드바 UI 구성
-def render_sidebar():
-    with st.sidebar:
-        st.markdown("---")
-        st.header("단축키:")
-        st.write("- Ctrl+E: 박스 편집(Edit) 모드")
-        st.write("- Ctrl+D: 박스 그리기(Draw) 모드")
-        st.write("- Ctrl+L: 라벨 입력(Label) 모드")
-        st.write("- ESC: 취소") 
-        st.write("- Del: 삭제") 
+# def render_sidebar():
+#     with st.sidebar:
+#         st.markdown("---")
+#         st.header("단축키:")
+#         st.write("- Ctrl+E: 박스 편집(Edit) 모드")
+#         st.write("- Ctrl+D: 박스 그리기(Draw) 모드")
+#         st.write("- Ctrl+L: 라벨 입력(Label) 모드")
+#         st.write("- ESC: 취소") 
+#         st.write("- Del: 삭제") 
 
 
 
