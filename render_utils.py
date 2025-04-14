@@ -304,6 +304,12 @@ def render_image_list_screen():
                                 st.success("업로드 완료!")
                                 st.session_state.file_uploader_key += 1
                                 st.session_state.upload_success = True
+                                # 이미지 리스트 업데이트
+                                st.session_state.image_list = st.session_state.minio_client.list_images_in_bucket(
+                                    st.session_state.selected_bucket,
+                                    prefix=st.session_state.project_id
+                                )
+                                st.rerun()  # 페이지 새로고침
                             else:
                                 st.error("업로드 실패")
                                 st.session_state.upload_failed = True
@@ -311,6 +317,15 @@ def render_image_list_screen():
                             st.warning("업로드할 파일을 선택해주세요.")
                 st.write("&nbsp;", unsafe_allow_html=True)       
                 if st.button("이미지 업로드", type="primary", help="프로젝트에 이미지를 추가합니다", key="show_upload_dialog", use_container_width=True):
+                    # 프로젝트 이름 설정
+                    conn = connect_to_postgres()
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT project_name FROM metadata WHERE substring(storage_path from 'easylabel/([^/]+)/') = %s LIMIT 1", (st.session_state.project_id,))
+                    result = cursor.fetchone()
+                    if result:
+                        st.session_state.project_name = result[0]
+                    cursor.close()
+                    conn.close()
                     upload_dialog()
 
             with col5:
