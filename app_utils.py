@@ -26,9 +26,9 @@ def login():
     # 입력 필드를 중앙에 배치
     _, col2, _ = st.columns([1,2,1])
     with col2:
-        userid = st.text_input("아이디", placeholder="이름을 입력하세요")
+        userid = st.text_input("아이디", placeholder="사번을 입력하세요")
         password = st.text_input("비밀번호", type="password", 
-                               placeholder="사번을 입력하세요")
+                               placeholder="초기 비밀번호는 1111 입니다")
         if st.button("로그인", type="primary", use_container_width=True):
             user_db = load_user_database()
             
@@ -117,6 +117,10 @@ def file_uploader(uploaded_files):
             else:
                 # 3️⃣ 메타데이터 DB에 삽입
                 image_path = f"{st.session_state.selected_bucket}/{project_path}{file.name}"
+                if not st.session_state.project_name:
+                    st.error("프로젝트 이름을 찾을 수 없습니다. 업로드를 중단합니다.")
+                    return False
+
                 insert_metadata(st.session_state.project_name, image_path)
         else:
             # 중복된 파일 처리
