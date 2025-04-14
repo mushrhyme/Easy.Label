@@ -30,7 +30,7 @@ def connect_to_postgres():
             dbname="postgres", 
             user="postgres", 
             password="1111", 
-            host="localhost", 
+            host="172.17.17.100", 
             port="5432"
         )
         return conn
