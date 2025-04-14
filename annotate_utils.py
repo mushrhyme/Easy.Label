@@ -168,7 +168,6 @@ def auto_detect_text_regions(bucket_name, object_name, bboxes, labels):
         if temp_image_path:
             # 텍스트 영역 감지
             if st.session_state.ocr is None:
-                
                 st.session_state.ocr = PaddleOCR(
                     use_angle_cls=True,
                     show_log=False,

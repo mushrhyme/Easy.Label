@@ -186,7 +186,6 @@ def render_project_list_screen():
             st.warning("이미 존재하는 프로젝트 이름입니다.")
         else:
             uploaded_files = st.file_uploader("이미지 업로드", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
-
             if st.button("📦 프로젝트 생성", use_container_width=True):
                 if not new_project_name or not uploaded_files:
                     st.warning("프로젝트 이름과 이미지를 모두 입력해주세요.")
