@@ -31,6 +31,7 @@ def connect_to_postgres():
             user="postgres", 
             password="1111", 
             host="172.17.17.100", 
+            # host="192.168.0.7",
             port="5432"
         )
         return conn
@@ -428,12 +429,12 @@ def get_path_by_status(status):
         SELECT storage_path
         FROM metadata 
         WHERE 1=1
-        AND status = %s 
-        AND (
-            substring(storage_path from 'easylabel/([^/]+)/') = %s
-            AND assigned_by = %s 
-            OR created_by = %s 
-        )
+            AND status = %s 
+            AND substring(storage_path from 'easylabel/([^/]+)/') = %s
+            AND (
+                assigned_by = %s 
+                OR created_by = %s 
+            )
         """
         cursor.execute(count_sql, (status, st.session_state.project_id, st.session_state.userid, st.session_state.userid))
         
@@ -464,12 +465,12 @@ def get_filtered_images(status_filter, user_filter, sort_option):
         SELECT filename, storage_path 
         FROM metadata 
         WHERE 1=1
-        AND (
-            substring(storage_path from 'easylabel/([^/]+)/') = %s
-            AND assigned_by = %s -- 내가 업로드한 이미지
-            OR created_by = %s -- 내가 할당받은 이미지
-            
-        )
+            AND substring(storage_path from 'easylabel/([^/]+)/') = %s -- 프로젝트 이름으로 구분
+            AND (
+                assigned_by = %s -- 내가 업로드한 이미지
+                OR created_by = %s -- 내가 할당받은 이미지
+                
+            )
          
         """
         params = [st.session_state.project_id, st.session_state.userid, st.session_state.userid]
