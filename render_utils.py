@@ -200,10 +200,8 @@ def render_image_list_screen():
                 "정렬",
                 ["날짜순 (최신)", "날짜순 (오래된)", "파일명순", "상태순"]
             )
-        
         # 이미지 가져오기
         images = get_filtered_images(status_filter, user_filter, sort_option)
-        
         if images:
             # 이미지 그리드 표시
             col1, col2, col3, col4, col5 = st.columns(5)

@@ -237,7 +237,7 @@ def main():
         return
 
     st.session_state.minio_client = MinIOManager(
-        st.session_state.access_key, st.session_state.secret_key
+        st.session_state.access_key, st.session_state.secret_key,
     )
  
     # 현재 모드에 따라 화면 렌더링

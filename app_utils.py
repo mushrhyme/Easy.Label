@@ -68,9 +68,8 @@ def select_project(project_id: str):
     prefix = f"{project_id}/"
     st.session_state.page_num = 1
 
-    assigned_images = [i[0] for i in get_path_by_status("assigned")]
-
-    st.session_state.image_list = assigned_images
+    # get_path_by_status는 이미 storage_path 리스트를 반환하므로 리스트 컴프리헨션이 불필요
+    st.session_state.image_list = get_path_by_status("assigned")
 
     set_mode("image_list")
 
